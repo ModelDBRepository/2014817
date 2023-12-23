@@ -1,0 +1,84 @@
+% Bueno-Orovio-Cherry-Fenton model
+% 
+% case 1: epi case 2: endo case 3: midmyo
+
+par V_0=-83
+par V_fi=2.7
+par period=1000
+par pulse=1
+par tp=0.5, tstart=50
+ts=t-tstart
+J_stim = -pulse*(heav(mod(ts,period))-heav(mod(ts,period)-tp))
+
+u' = -(J_fi+J_so+J_si+J_stim)
+Vm = V_0+u*(V_fi-V_0)
+
+par u_m=0.3
+m=heav(u_m-u)*0+heav(u-u_m)*1
+par case=1
+par u_p=0.13
+p=heav(u_p-u)*0+heav(u-u_p)*1
+u_q=heav(2-case)*0.006+heav(3-case)*heav(case-1)*0.024+heav(case-2)*0.1
+q=heav(u_q-u)*0+heav(u-u_q)*1
+
+u_r=heav(2-case)*0.006+heav(3-case)*heav(case-1)*0.006+heav(case-2)*0.005
+r=heav(u_r-u)*0+heav(u-u_r)*1
+
+u_u=heav(2-case)*1.55+heav(3-case)*heav(case-1)*1.56+heav(case-2)*1.61
+tau_fi=heav(2-case)*0.11+heav(3-case)*(case-1)*0.104+heav(case-2)*0.078
+      
+J_fi = -m*v*(u-u_m)*(u_u-u)/tau_fi
+
+par tau_v_plus=1.45
+
+tauv2_min=heav(2-case)*1150+heav(3-case)*(case-1)*10+heav(case-2)*145
+tauv1_min=heav(2-case)*60+heav(3-case)*(case-1)*75+heav(case-2)*80
+
+v_inf=heav(u_q-u)*1+heav(u-u_q)*0
+
+tauv_min = q*tauv2_min+(1-q)*tauv1_min
+v' = (1-m)*(v_inf-v)/tauv_min-m*v/tau_v_plus
+
+tau_o1=heav(2-case)*400+heav(3-case)*heav(case-1)*470+heav(case-2)*410
+tau_o2=heav(2-case)*6+heav(3-case)*heav(case-1)*6+heav(case-2)*7
+tau_so1=heav(2-case)*30.02+heav(3-case)*heav(case-1)*40+heav(case-2)*91
+tau_so2=heav(2-case)*0.996+heav(3-case)*heav(case-1)*1.2+heav(case-2)*0.8
+k_so=heav(2-case)*2.046+heav(3-case)*heav(case-1)*2+heav(case-2)*2.1
+u_so=heav(2-case)*0.65+heav(3-case)*heav(case-1)*0.65+heav(case-2)*0.6
+
+tau_o = (1-r)*tau_o1+r*tau_o2
+tau_so = tau_so1+(tau_so2-tau_so1)*(1+tanh(k_so*(u-u_so)))/2
+J_so = u*(1-p)/tau_o+p/tau_so
+
+tau_si=heav(2-case)*1.8875+heav(3-case)*heav(case-1)*2.9013+heav(case-2)*3.3849
+
+J_si = -p*w*s/tau_si
+
+init w=1
+tauw_pl=heav(2-case)*200+heav(3-case)*heav(case-1)*280+heav(case-2)*280
+
+tau_winf=heav(2-case)*0.071+heav(3-case)*heav(case-1)*0.0273+heav(case-2)*0.01
+wstar_inf=heav(2-case)*0.94+heav(3-case)*heav(case-1)*0.78+heav(case-2)*0.5
+tauw1_mi=heav(2-case)*60+heav(3-case)*heav(case-1)*6+heav(case-2)*70
+tauw2_mi=heav(2-case)*15+heav(3-case)*heav(case-1)*140+heav(case-2)*8
+k_w_minus=heav(2-case)*65+heav(3-case)*heav(case-1)*200+heav(case-2)*200
+u_w_minus=heav(2-case)*0.03+heav(3-case)*heav(case-1)*0.016+heav(case-2)*0.016
+uw_pl=heav(2-case)*200+heav(3-case)*heav(case-1)*280+heav(case-2)*280
+w_inf = (1-r)*(1-u*1/tau_winf)+r*wstar_inf
+tauw_mi = tauw1_mi+(tauw2_mi-tauw1_mi)*(1+tanh(k_w_minus*(u-u_w_minus)))/2
+w' = (1-r)*(w_inf-w)/tauw_mi-r*w/tauw_pl
+init s=0
+ par tau_s1=2.7342
+par k_s=2.0994
+#      par u_s=0.9087
+par u_s=1.7
+tau_s2=heav(2-case)*16+heav(3-case)*heav(case-1)*2+heav(case-2)*4
+
+tau_s = (1-p)*tau_s1+p*tau_s2
+s' = ((1+tanh(k_s*(u-u_s)))/2-s)/tau_s
+aux Vm=Vm
+
+# Numerical and plotting parameters for xpp
+@ method=euler, dt=0.05, xlo=0, xhi=4000, ylo=-90, yhi=55, yp=Vm, total=4000
+@ bound=1000000, maxstor=1000000
+done
